@@ -182,8 +182,8 @@ app.post('/api/auth/register', async (req, res) => {
 
       return res.status(200).json({
         message: emailSent
-          ? 'Your account has been created successfully. We just sent you an email.'
-          : 'An account with this email already exists. Please sign in.',
+             ? 'An account with this email already exists. We sent another welcome email. Please sign in or use Forgot Password.'
+             : 'An account with this email already exists. Please sign in or use Forgot Password.',
         alreadyExists: true,
         emailSent
       });
