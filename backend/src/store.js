@@ -2,10 +2,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { JSONFilePreset } from 'lowdb/node';
 import bcrypt from 'bcryptjs';
+import { mkdir } from 'fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const dbPath = path.resolve(__dirname, '../data/db.json');
+const dbDir = path.dirname(dbPath);
 
 const defaultData = {
   users: [],
@@ -13,6 +15,8 @@ const defaultData = {
   otpCodes: [],
   resetTokens: []
 };
+
+await mkdir(dbDir, { recursive: true });
 
 export const db = await JSONFilePreset(dbPath, defaultData);
 
