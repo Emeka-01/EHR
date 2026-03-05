@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { config, isSmtpConfigured } from './config.js';
+import { config, isResendConfigured, isSmtpConfigured } from './config.js';
 
 let transporter;
 let usingEthereal = false;
@@ -40,7 +40,34 @@ const getTransporter = async () => {
   return transporter;
 };
 
+const sendWithResend = async ({ to, subject, html, text }) => {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${config.resend.apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: config.resend.from,
+      to: [to],
+      subject,
+      html,
+      text
+    })
+  });
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(`Resend API error (${response.status}): ${details}`);
+  }
+};
+
 const sendMail = async ({ to, subject, html, text }) => {
+  if (isResendConfigured) {
+    await sendWithResend({ to, subject, html, text });
+    return;
+  }
+
   const mailer = await getTransporter();
   const info = await mailer.sendMail({
     from: config.smtp.from,

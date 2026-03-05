@@ -32,8 +32,9 @@ You can also run backend from the project root:
 
 ## Email Sending
 
-- For real email delivery, set SMTP values in `backend/.env`.
-- If SMTP is not configured, backend falls back to Ethereal test inbox and prints preview URLs in backend logs.
+- On Render Free, set `RESEND_API_KEY` (recommended) because Render Free blocks SMTP ports `25/465/587`.
+- For local/dev or hosts that allow SMTP, you can set SMTP values in `backend/.env`.
+- If neither Resend nor SMTP is configured, backend falls back to Ethereal test inbox and prints preview URLs in backend logs.
 
 ## Implemented Auth APIs
 
