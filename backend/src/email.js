@@ -58,7 +58,11 @@ const sendWithResend = async ({ to, subject, html, text }) => {
 
   if (!response.ok) {
     const details = await response.text();
-    throw new Error(`Resend API error (${response.status}): ${details}`);
+    const hint =
+      response.status === 401
+        ? ' Check RESEND_API_KEY in Render environment variables and redeploy.'
+        : '';
+    throw new Error(`Resend API error (${response.status}): ${details}${hint}`);
   }
 };
 
