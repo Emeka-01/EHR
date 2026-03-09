@@ -36,7 +36,7 @@ interface AuthContextType {
   resendVerificationEmail: (email: string) => Promise<void>;
   verifyOtp: (code: string) => Promise<boolean>;
   resendOtp: () => Promise<void>;
-  requestPasswordReset: (email: string) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<string>;
   resetPassword: (token: string, password: string) => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   bookAppointment: (
@@ -330,13 +330,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     addToast('info', 'A new OTP has been sent to your email.');
   };
 
-  const requestPasswordReset = async (email: string) => {
-    await apiRequest<{ message: string }>('/api/auth/forgot-password', {
+  const requestPasswordReset = async (email: string): Promise<string> => {
+    const result = await apiRequest<{ message: string; resetToken?: string }>(
+      '/api/auth/forgot-password',
+      {
       method: 'POST',
       body: JSON.stringify({ email })
-    });
+      }
+    );
 
-    addToast('info', 'If the account exists, a reset link has been sent.');
+    if (!result.resetToken) {
+      throw new Error('Unable to start password reset.');
+    }
+
+    addToast('info', result.message);
+    return result.resetToken;
   };
 
   const resetPassword = async (token: string, password: string) => {

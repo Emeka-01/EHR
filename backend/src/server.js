@@ -23,12 +23,12 @@ import { config } from './config.js';
 import { db, ensureSeedUser } from './store.js';
 import {
   sendOtpEmail,
-  sendPasswordResetEmail,
   sendVerificationEmail,
   sendWelcomeEmail
 } from './email.js';
 
 const app = express();
+const RECENT_SIGNUP_WINDOW_MS = 2 * 60 * 1000;
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -172,12 +172,28 @@ app.post('/api/auth/register', async (req, res) => {
     const email = normalizeEmail(emailRaw);
     const existingUser = db.data.users.find((user) => user.email === email);
     if (existingUser) {
+      const createdAtMs = Date.parse(String(existingUser.createdAt || ''));
+      const isRecentSignup =
+        Number.isFinite(createdAtMs) &&
+        Date.now() - createdAtMs <= RECENT_SIGNUP_WINDOW_MS;
+
       let emailSent = true;
       try {
         await sendWelcomeEmail({ to: existingUser.email, name: existingUser.name });
       } catch (emailError) {
         emailSent = false;
         console.error('welcome email resend error', emailError);
+      }
+
+      if (isRecentSignup) {
+        return res.status(200).json({
+          message: emailSent
+            ? 'Account created. A welcome email has been sent.'
+            : 'Account created, but we could not send the welcome email right now.',
+          alreadyExists: false,
+          emailSent,
+          duplicateSignup: true
+        });
       }
 
       return res.status(200).json({
@@ -449,30 +465,25 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     const emailRaw = String(req.body.email || '').trim();
     if (!emailRaw || !emailRegex.test(emailRaw)) {
-      return res.status(200).json({
-        message: 'If an account exists for this email, a reset link has been sent.'
-      });
+      return res.status(400).json({ message: 'Please enter a valid email address.' });
     }
 
     const user = findUserByEmail(emailRaw);
     if (!user) {
-      return res.status(200).json({
-        message: 'If an account exists for this email, a reset link has been sent.'
-      });
+      return res.status(404).json({ message: 'No account found for this email.' });
     }
 
     const token = createResetToken(user.id);
-    const resetUrl = `${config.frontendUrl}/?resetToken=${token}`;
 
     await db.write();
-    await sendPasswordResetEmail({ to: user.email, name: user.name, resetUrl });
 
     return res.status(200).json({
-      message: 'If an account exists for this email, a reset link has been sent.'
+      message: 'Email confirmed. You can set a new password now.',
+      resetToken: token
     });
   } catch (error) {
     console.error('forgot password error', error);
-    return res.status(500).json({ message: 'Unable to send reset email.' });
+    return res.status(500).json({ message: 'Unable to start password reset.' });
   }
 });
 

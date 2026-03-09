@@ -56,15 +56,15 @@ export function ResetPasswordPage({ onNavigate }: ResetPasswordPageProps) {
   if (!resetToken) {
     return (
       <AuthLayout
-        title="Reset Link Required"
-        subtitle="Open your reset link from email to continue">
+        title="Email Confirmation Required"
+        subtitle="Confirm your email first to reset password">
 
         <div className="space-y-4 text-center">
           <p className="text-sm text-gray-600">
-            This page requires a valid reset link. Please request a new one.
+            Please confirm your account email first before setting a new password.
           </p>
           <Button onClick={() => onNavigate('forgot-password')} fullWidth>
-            Request New Reset Link
+            Confirm Email
           </Button>
         </div>
       </AuthLayout>);

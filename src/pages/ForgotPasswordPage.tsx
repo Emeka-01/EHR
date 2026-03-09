@@ -6,6 +6,8 @@ import { ViewState } from '../types';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const PASSWORD_RESET_TOKEN_KEY = 'passwordResetToken';
+
 interface ForgotPasswordPageProps {
   onNavigate: (view: ViewState) => void;
 }
@@ -13,39 +15,30 @@ export function ForgotPasswordPage({ onNavigate }: ForgotPasswordPageProps) {
   const { requestPasswordReset } = useAuth();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSent, setIsSent] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
 
     try {
-      await requestPasswordReset(email);
-      setIsSent(true);
+      const resetToken = await requestPasswordReset(email);
+      sessionStorage.setItem(PASSWORD_RESET_TOKEN_KEY, resetToken);
+      onNavigate('reset-password');
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Unable to confirm email address.'
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isSent) {
-    return (
-      <AuthLayout title="Check Your Email" subtitle="Reset link sent">
-        <div className="text-center py-4">
-          <p className="text-gray-600 mb-6">
-            If an account exists for <strong>{email}</strong>, you will receive
-            a password reset link shortly.
-          </p>
-          <Button onClick={() => onNavigate('login')} fullWidth>
-            Back to Sign In
-          </Button>
-        </div>
-      </AuthLayout>);
-
-  }
   return (
     <AuthLayout
       title="Reset Password"
-      subtitle="Enter your email to receive instructions">
+      subtitle="Confirm your email to continue">
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input
@@ -56,9 +49,14 @@ export function ForgotPasswordPage({ onNavigate }: ForgotPasswordPageProps) {
           placeholder="name@example.com"
           required />
 
+        {error &&
+        <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
+            {error}
+          </p>
+        }
 
         <Button type="submit" fullWidth isLoading={isLoading}>
-          Send Reset Link
+          Confirm Email
         </Button>
 
         <div className="text-center">

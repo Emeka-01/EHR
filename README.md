@@ -42,5 +42,5 @@ You can also run backend from the project root:
 - Resend verification email
 - Login with lockout after failed attempts
 - OTP verify/resend for lockout unlock
-- Forgot password + reset password link
+- Forgot password email confirmation + in-app reset password
 - Profile fetch/update with JWT auth
